@@ -15,11 +15,11 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
-#define MQTT_HOST "iot-connect.in"
+#define MQTT_HOST "MQTT Server"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME "iotconnect"
-#define MQTT_PASS "iot-12345"
+#define MQTT_UNAME "MQTT USERNAME"
+#define MQTT_PASS "MQTT PSK"
 
 #define leftButton 33
 #define rightButton 26
