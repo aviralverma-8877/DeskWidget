@@ -18,7 +18,7 @@ extern "C" {
 #define MQTT_HOST "MQTT Server"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME "MQTT USERNAME"
+#define MQTT_UNAME "MQTT Uname"
 #define MQTT_PASS "MQTT PSK"
 
 #define leftButton 33
@@ -35,11 +35,13 @@ Ticker ledTicker;
 Ticker tickerLeftButtonPressed;
 Ticker tickerRightButtonPressed;
 Ticker tickerNoButtonPressed;
+Ticker tickerNotification;
 
 TimerHandle_t mqttReconnectTimer;
 
 byte lastPressed = 0;
 bool ledStatus = HIGH;
+bool notification = false;
 byte totalOptions = 5;
 byte menu = 0;
 
@@ -66,6 +68,7 @@ void onMqttMessage(char* topic, String payload, AsyncMqttClientMessageProperties
 void onMqttUnsubscribe(uint16_t packetId);
 void onMqttSubscribe(uint16_t packetId, uint8_t qos);
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);
+void checkNotification();
 
 void leftButtonPressed()
 {
@@ -76,6 +79,7 @@ void leftButtonPressed()
         backledAlert();
         toggleLEDon();
         mqtt.publish(MQTTOUT, 1, true, "left");
+        notification = false;
      }
 }
 
@@ -98,6 +102,7 @@ void rightButtonPressed()
       backledAlert();
       toggleLEDon();
       mqtt.publish(MQTTOUT, 1, true, "right");
+      notification = false;
    }   
 }
 
@@ -159,7 +164,13 @@ void onMqttMessage(char* topic, String payload, AsyncMqttClientMessageProperties
   String msg = "";
   for(int i=0; i<len; i++)
     msg += payload[i];
-  printOnLCD(msg);
+  if(strcmp(msg.c_str(),"ALERT")==0)
+  {
+    backledAlert();
+    notification = true;
+  }
+  else
+    printOnLCD(msg);
 }
 
 void onMqttPublish(uint16_t packetId) {
@@ -171,7 +182,13 @@ void inSetupMode(AsyncWiFiManager *myWiFiManager)
   printOnLCD("In Setup Mode.\n\nWiFi AP:\nTable Clock");
 }
 
-
+void checkNotification()
+{
+  if(notification)
+  {
+    digitalWrite(led, !digitalRead(led));
+  }
+}
 void setup() {
 // init serial for debug:
    Serial.begin(115200);
@@ -192,7 +209,7 @@ void setup() {
    tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
    tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
    tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
-
+   tickerNotification.attach_ms(500, checkNotification);
    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
    mqtt.onConnect(MQTT_connect);
    mqtt.onDisconnect(onMqttDisconnect);
