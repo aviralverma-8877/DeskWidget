@@ -15,11 +15,11 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
-#define MQTT_HOST "MQTT Server"
+#define MQTT_HOST "iot-connect.in"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME "MQTT Uname"
-#define MQTT_PASS "MQTT PSK"
+#define MQTT_UNAME "iotconnect"
+#define MQTT_PASS "iot-12345"
 
 #define leftButton 33
 #define rightButton 26
@@ -168,6 +168,10 @@ void onMqttMessage(char* topic, String payload, AsyncMqttClientMessageProperties
   {
     backledAlert();
     notification = true;
+  }
+  if(strcmp(msg.c_str(),"NOALERT")==0)
+  {
+    notification = false;
   }
   else
     printOnLCD(msg);
