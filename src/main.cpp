@@ -15,11 +15,11 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
-#define MQTT_HOST "iot-connect.in"
+#define MQTT_HOST "192.168.0.52"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME "iotconnect"
-#define MQTT_PASS "iot-12345"
+#define MQTT_UNAME ""
+#define MQTT_PASS ""
 
 #define leftButton 33
 #define rightButton 26
@@ -204,6 +204,10 @@ void checkNotification()
   {
     digitalWrite(led, !digitalRead(led));
   }
+  else
+  {
+    digitalWrite(led, LOW);
+  }
 }
 
 void attendence()
@@ -237,7 +241,7 @@ void setup() {
    mqtt.onUnsubscribe(onMqttUnsubscribe);
    mqtt.onMessage(onMqttMessage);
    mqtt.onPublish(onMqttPublish);
-   mqtt.setCredentials(MQTT_UNAME, MQTT_PASS);
+   //mqtt.setCredentials(MQTT_UNAME, MQTT_PASS);
    mqtt.setServer(MQTT_HOST, MQTT_PORT);
 
 
