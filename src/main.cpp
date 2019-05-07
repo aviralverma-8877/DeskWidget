@@ -15,11 +15,11 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
-#define MQTT_HOST "MQTT Broker URL"
+#define MQTT_HOST "iot-connect.in"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME "MQTT Username"
-#define MQTT_PASS "MQTT PSK"
+#define MQTT_UNAME "iotconnect"
+#define MQTT_PASS "iot-12345"
 
 #define leftButton 33
 #define rightButton 26
@@ -129,9 +129,6 @@ void savedAndConnected()
 void MQTT_connect(bool sessionPresent) {
   Serial.println("MQTT Connected");
   uint16_t packetIdSub = mqtt.subscribe(MQTTIN, 2);
-  tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
-  tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
-  tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
   tickerNotification.attach_ms(500, checkNotification);
   tickerAttendence.attach(5,attendence);
 }
@@ -223,7 +220,9 @@ void setup() {
    pinMode(leftButton, INPUT);
    pinMode(rightButton, INPUT);
    pinMode(backled, OUTPUT);
-   
+   tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
+   tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
+   tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
 //init LCD display
    lcd.begin();
  // Set the contrast
