@@ -15,16 +15,17 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
-#define MQTT_HOST "MQTT Server"
+#define MQTT_HOST "MQTT Broker URL"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME "MQTT Uname"
+#define MQTT_UNAME "MQTT Username"
 #define MQTT_PASS "MQTT PSK"
 
 #define leftButton 33
 #define rightButton 26
 #define led 25
 #define backled 4
+#define MQTTATT "tableClock-att"
 #define MQTTIN "tableClock-input"
 #define MQTTOUT "tableClock-output"
 
@@ -36,6 +37,7 @@ Ticker tickerLeftButtonPressed;
 Ticker tickerRightButtonPressed;
 Ticker tickerNoButtonPressed;
 Ticker tickerNotification;
+Ticker tickerAttendence;
 
 TimerHandle_t mqttReconnectTimer;
 
@@ -69,6 +71,7 @@ void onMqttUnsubscribe(uint16_t packetId);
 void onMqttSubscribe(uint16_t packetId, uint8_t qos);
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);
 void checkNotification();
+void attendence();
 
 void leftButtonPressed()
 {
@@ -126,10 +129,22 @@ void savedAndConnected()
 void MQTT_connect(bool sessionPresent) {
   Serial.println("MQTT Connected");
   uint16_t packetIdSub = mqtt.subscribe(MQTTIN, 2);
+  tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
+  tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
+  tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
+  tickerNotification.attach_ms(500, checkNotification);
+  tickerAttendence.attach(5,attendence);
 }
 void connectToMqtt() {
-  Serial.println("Connecting to MQTT...");
-  mqtt.connect();
+  if(WiFi.status() == WL_DISCONNECTED)
+  {
+    ESP.restart();
+  }
+  else
+  {
+    Serial.println("Connecting to MQTT...");
+    mqtt.connect();
+  }
 }
 
 void backledAlert()
@@ -169,6 +184,10 @@ void onMqttMessage(char* topic, String payload, AsyncMqttClientMessageProperties
     backledAlert();
     notification = true;
   }
+  if(strcmp(msg.c_str(),"NOALERT")==0)
+  {
+    notification = false;
+  }
   else
     printOnLCD(msg);
 }
@@ -189,6 +208,12 @@ void checkNotification()
     digitalWrite(led, !digitalRead(led));
   }
 }
+
+void attendence()
+{
+  mqtt.publish(MQTTATT, 1, true, "attendence");
+}
+
 void setup() {
 // init serial for debug:
    Serial.begin(115200);
@@ -206,10 +231,6 @@ void setup() {
  // Clear the screen
    lcd.clear();
 //check button pressed
-   tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
-   tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
-   tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
-   tickerNotification.attach_ms(500, checkNotification);
    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
    mqtt.onConnect(MQTT_connect);
    mqtt.onDisconnect(onMqttDisconnect);
@@ -233,13 +254,11 @@ void setup() {
       ESP.restart();
      }
    }
-   else
-   {
-    if(!wifiManager.autoConnect("Table Clock"))
-    {
-        ESP.restart();
+   WiFi.begin();
+   while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
     }
-   }
    savedAndConnected();
 }
 
