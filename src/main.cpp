@@ -112,7 +112,7 @@ void rightButtonPressed()
 void printOnLCD(String option)
 {
   lcd.clear(); 
-  lcd.println(option.c_str()); 
+  lcd.print(option.c_str()); 
 }
 
 
@@ -248,8 +248,8 @@ void setup() {
 //init wifi manager
    printOnLCD("Trying WiFi...");
    AsyncWiFiManager wifiManager(&server,&dns);
+   wifiManager.setTryConnectDuringConfigPortal(false);
    wifiManager.setAPCallback(inSetupMode);
-   wifiManager.setSaveConfigCallback(savedAndConnected);
    if(digitalRead(leftButton))
    {
      if(!wifiManager.startConfigPortal("Table Clock"))
@@ -257,11 +257,14 @@ void setup() {
       ESP.restart();
      }
    }
-   WiFi.begin();
-   while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
+   else
+   {
+    WiFi.begin();
+    while (WiFi.status() != WL_CONNECTED) {
+          delay(500);
+          Serial.print(".");
+      }
+   }
    savedAndConnected();
 }
 
