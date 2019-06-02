@@ -15,7 +15,7 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
-#define MQTT_HOST "192.168.0.52"
+#define MQTT_HOST "192.168.1.52"
 #define MQTT_PORT 1883
 //MQTT Cred
 #define MQTT_UNAME ""
@@ -25,12 +25,15 @@ extern "C" {
 #define rightButton 26
 #define led 25
 #define backled 4
+#define touch 13
+
 #define MQTTATT "tableClock-att"
 #define MQTTIN "tableClock-input"
 #define MQTTOUT "tableClock-output"
 
 
-Ticker tickerLEDonButtonPress;
+
+Ticker tickerTouch;
 Ticker bkledTicker;
 Ticker ledTicker;
 Ticker tickerLeftButtonPressed;
@@ -44,6 +47,8 @@ TimerHandle_t mqttReconnectTimer;
 byte lastPressed = 0;
 bool ledStatus = HIGH;
 bool notification = false;
+bool touched_button = false;
+bool touched_button_confirm = false;
 byte totalOptions = 5;
 byte menu = 0;
 
@@ -95,6 +100,33 @@ void NobuttonPressed()
     }
 }
 
+int touchValue;
+
+void touched()
+{
+  if(!touched_button_confirm)
+  {
+    touchValue = touchRead(touch);
+    touched_button_confirm = true;
+  }
+  if(touched_button_confirm)
+  {
+    touchValue = (touchValue+touchRead(touch))/2;
+    if(touchValue<=40)
+    {
+      if(!touched_button)
+      {
+        touched_button = true;
+        backledAlert();
+      }
+    }
+    else
+    {
+      touched_button = false;
+    }
+    touched_button_confirm = false;
+  }
+}
 
 void rightButtonPressed()
 {
@@ -114,6 +146,7 @@ void printOnLCD(String option)
   lcd.clear(); 
   lcd.print(option.c_str()); 
 }
+
 
 
 void turnOffBackled()
@@ -147,7 +180,7 @@ void connectToMqtt() {
 void backledAlert()
 {
   digitalWrite(backled, HIGH);
-  bkledTicker.once(15, turnOffBackled);
+  bkledTicker.once(5, turnOffBackled);
 }
 
 void toggleLEDon()
@@ -190,7 +223,7 @@ void onMqttMessage(char* topic, String payload, AsyncMqttClientMessageProperties
 }
 
 void onMqttPublish(uint16_t packetId) {
-  Serial.println("MQTT Publish");
+  //Serial.println("MQTT Publish");
 }
 
 void inSetupMode(AsyncWiFiManager *myWiFiManager)
@@ -224,6 +257,7 @@ void setup() {
    pinMode(leftButton, INPUT);
    pinMode(rightButton, INPUT);
    pinMode(backled, OUTPUT);
+   tickerTouch.attach_ms(100, touched);
    tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
    tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
    tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
