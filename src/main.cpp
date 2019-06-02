@@ -112,7 +112,7 @@ void touched()
   if(touched_button_confirm)
   {
     touchValue = (touchValue+touchRead(touch))/2;
-    if(touchValue<=40)
+    if(touchValue<=35)
     {
       if(!touched_button)
       {
@@ -257,7 +257,7 @@ void setup() {
    pinMode(leftButton, INPUT);
    pinMode(rightButton, INPUT);
    pinMode(backled, OUTPUT);
-   tickerTouch.attach_ms(100, touched);
+   tickerTouch.attach_ms(50, touched);
    tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
    tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
    tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
