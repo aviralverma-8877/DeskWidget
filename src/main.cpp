@@ -101,22 +101,41 @@ void NobuttonPressed()
 }
 
 int touchValue;
-
+int touchCount = 0;
 void touched()
 {
   if(!touched_button_confirm)
   {
-    touchValue = touchRead(touch);
-    touched_button_confirm = true;
+    if(touchCount == 0)
+    {
+      touchValue = touchRead(touch);
+    }
+    else
+    {
+        touchValue = (touchValue+touchRead(touch))/2;
+    }
+    if(touchCount == 10)
+    {
+      touchCount = 0;
+      //lcd.print(touchValue);
+      touched_button_confirm = true;
+    }
+    else
+    {
+      touchCount++;
+    }
+    
   }
   if(touched_button_confirm)
   {
-    touchValue = (touchValue+touchRead(touch))/2;
+    
     if(touchValue<=35)
     {
+      //lcd.print(touchValue);
       if(!touched_button)
-      {
+      {        
         touched_button = true;
+        mqtt.publish(MQTTOUT, 1, true, "touch");
         backledAlert();
       }
     }
@@ -257,7 +276,7 @@ void setup() {
    pinMode(leftButton, INPUT);
    pinMode(rightButton, INPUT);
    pinMode(backled, OUTPUT);
-   tickerTouch.attach_ms(50, touched);
+   tickerTouch.attach_ms(10, touched);
    tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
    tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
    tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
