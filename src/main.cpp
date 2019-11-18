@@ -14,8 +14,13 @@ extern "C" {
 #include <AsyncMqttClient.h>
 
 #include <Ticker.h>
-#include <Nokia_LCD.h>
-#define MQTT_HOST "192.168.1.52"
+#include "graphicsLCD.h"
+
+#define lcd_RST_pin 22 // LCD HX1230 pins, (no pin6) Change to your desire pins
+#define lcd_CS_pin 21
+#define lcd_DIN_pin 18
+#define lcd_CLK_pin 5
+#define MQTT_HOST ""
 #define MQTT_PORT 1883
 //MQTT Cred
 #define MQTT_UNAME ""
@@ -56,7 +61,7 @@ AsyncWebServer server(80);
 DNSServer dns;
 AsyncMqttClient mqtt;
 
-Nokia_LCD lcd(5 /* CLK */, 18 /* DIN */, 19 /* DC */, 21 /* CE */, 22 /* RST */);
+graphicsLCD lcd(lcd_RST_pin,lcd_CS_pin,lcd_DIN_pin,lcd_CLK_pin);
 
 void leftButtonPressed();
 void NobuttonPressed();
@@ -160,10 +165,18 @@ void rightButtonPressed()
    }   
 }
 
-void printOnLCD(String option)
+void printOnLCD(String str)
 {
-  lcd.clear(); 
-  lcd.print(option.c_str()); 
+  lcd.line(1);
+  // Length (with one extra character for the null terminator)
+  int str_len = str.length() + 1; 
+  
+  // Prepare the character array (the buffer) 
+  char char_array[str_len];
+  
+  // Copy it over 
+  str.toCharArray(char_array, str_len);
+  lcd.print(char_array);
 }
 
 
@@ -282,9 +295,7 @@ void setup() {
    tickerNoButtonPressed.attach_ms(5, NobuttonPressed);
 //init LCD display
    lcd.begin();
- // Set the contrast
-   lcd.setContrast(50);  // Good values are usualy between 40 and 60
- // Clear the screen
+// Clear the screen
    lcd.clear();
 //check button pressed
    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
@@ -294,7 +305,7 @@ void setup() {
    mqtt.onUnsubscribe(onMqttUnsubscribe);
    mqtt.onMessage(onMqttMessage);
    mqtt.onPublish(onMqttPublish);
-   //mqtt.setCredentials(MQTT_UNAME, MQTT_PASS);
+   mqtt.setCredentials(MQTT_UNAME, MQTT_PASS);
    mqtt.setServer(MQTT_HOST, MQTT_PORT);
 
 
