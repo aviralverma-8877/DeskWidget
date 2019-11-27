@@ -50,9 +50,10 @@ Ticker tickerRightButtonPressed;
 Ticker tickerNoButtonPressed;
 Ticker tickerNotification;
 Ticker tickerAttendence;
+Ticker dutyCycle;
 
 TimerHandle_t mqttReconnectTimer;
-
+int cycle = 50;
 byte lastPressed = 0;
 bool ledStatus = HIGH;
 bool notification = false;
@@ -76,16 +77,18 @@ void inSetupMode(AsyncWiFiManager *myWiFiManager);
 void savedAndConnected();
 void backledAlert();
 void MQTT_connect(bool sessionPresent);
-void toggleLEDon();
-void toggleLEDoff();
 void connectToMqtt();
 void onMqttPublish(uint16_t packetId);
 void onMqttMessage(char* topic, String payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
 void onMqttUnsubscribe(uint16_t packetId);
 void onMqttSubscribe(uint16_t packetId, uint8_t qos);
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);
+void toggleLEDon();
+void toggleLEDoff();
 void checkNotification();
 void attendence();
+void cycleUp();
+void cycleDown();
 
 void leftButtonPressed()
 {
@@ -168,57 +171,91 @@ void rightButtonPressed()
       notification = false;
    }   
 }
+void toggleLEDon()
+{
+  digitalWrite(led,HIGH);
+  ledTicker.once(0.015,toggleLEDoff);
+}
+void toggleLEDoff()
+{
+  digitalWrite(led,LOW);
+}
 
 void printOnLCD(String str)
 {
-  DynamicJsonDocument doc(1024);
-  DeserializationError error = deserializeJson(doc, str);
-  if(error)
+  if(strcmp(str.c_str(),"")==0)
   {
-    lcd.line(1);
-    int str_len = str.length() + 1;     
-    char char_array[str_len];    
-    str.toCharArray(char_array, str_len);    
-    lcd.print(char_array);    
+    lcd.clear();
   }
   else
   {
-    JsonObject obj = doc.as<JsonObject>();
-    int line = obj[String("L")];
-    for(int i=0; i<=10; i++)
+    
+    DynamicJsonDocument doc(1024);
+    DeserializationError error = deserializeJson(doc, str);
+    if(error)
     {
-      if(i <= line)
+      lcd.clear();
+      lcd.line(1);
+      int str_len = str.length() + 1;     
+      char char_array[str_len];    
+      str.toCharArray(char_array, str_len);    
+      lcd.print(char_array);    
+    }
+    else
+    {
+      JsonObject obj = doc.as<JsonObject>();
+      int line = obj[String("L")];
+      for(int i=0; i<=10; i++)
       {
-        String l = obj[String(i)];
-        int str_len = l.length() + 1;     
-        char char_array[17] = "                ";   
-        lcd.line(i);
-        lcd.print(char_array); 
-        l.toCharArray(char_array, str_len);    
-        lcd.line(i);
-        lcd.print(char_array);
-      }
-      else
-      {
-        char char_array[17] = "                ";   
-        lcd.line(i);
-        lcd.print(char_array);
-      }
-      
-    }  
+        if(i <= line)
+        {
+          String l = obj[String(i)];
+          int str_len = l.length() + 1;     
+          char char_array[17] = "                ";   
+          lcd.line(i);
+          lcd.print(char_array); 
+          l.toCharArray(char_array, str_len);    
+          lcd.line(i);
+          lcd.print(char_array);
+        }
+        else
+        {
+          char char_array[17] = "                ";   
+          lcd.line(i);
+          lcd.print(char_array);
+        }
+        
+      }  
+    }
   }
 }
 
-
-
+void cycleUp()
+{
+  if(cycle < 255)
+  {
+    cycle++;
+    ledcWrite(ledChannel, cycle);
+    dutyCycle.once_ms(1,cycleUp);
+  }
+}
+void cycleDown()
+{
+  if(cycle > 50)
+  {
+    cycle--;
+    ledcWrite(ledChannel, cycle);
+    dutyCycle.once_ms(1,cycleDown);
+  }
+}
 void turnOffBackled()
 {
-  ledcWrite(ledChannel, 50);
+  cycleDown();
 }
 void savedAndConnected()
 {
   //staring the startup sequence.  
-   printOnLCD("Setup Completed.\nConnected to:\n"+WiFi.SSID());
+   printOnLCD("Connected to: "+WiFi.SSID());
    connectToMqtt();
 }
 void MQTT_connect(bool sessionPresent) {
@@ -241,18 +278,8 @@ void connectToMqtt() {
 
 void backledAlert()
 {
-  ledcWrite(ledChannel, 255);
-  bkledTicker.once(5, turnOffBackled);
-}
-
-void toggleLEDon()
-{
-  digitalWrite(led, HIGH);
-  ledTicker.once(0.01,toggleLEDoff);
-}
-void toggleLEDoff()
-{
-  digitalWrite(led, LOW);
+  cycleUp();
+  bkledTicker.once(10, turnOffBackled);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -290,18 +317,14 @@ void onMqttPublish(uint16_t packetId) {
 
 void inSetupMode(AsyncWiFiManager *myWiFiManager)
 {
-  printOnLCD("In Setup Mode.\n\nWiFi AP:\nTable Clock");
+  printOnLCD("WiFi AP: Table Clock");
 }
 
 void checkNotification()
 {
   if(notification)
   {
-    digitalWrite(led, !digitalRead(led));
-  }
-  else
-  {
-    digitalWrite(led, LOW);
+    backledAlert();
   }
 }
 
