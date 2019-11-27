@@ -236,7 +236,7 @@ void cycleUp()
   {
     cycle++;
     ledcWrite(ledChannel, cycle);
-    dutyCycle.once_ms(1,cycleUp);
+    dutyCycle.once_ms(5,cycleUp);
   }
 }
 void cycleDown()
@@ -245,7 +245,7 @@ void cycleDown()
   {
     cycle--;
     ledcWrite(ledChannel, cycle);
-    dutyCycle.once_ms(1,cycleDown);
+    dutyCycle.once_ms(5,cycleDown);
   }
 }
 void turnOffBackled()
