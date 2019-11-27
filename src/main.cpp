@@ -15,16 +15,17 @@ extern "C" {
 
 #include <Ticker.h>
 #include "graphicsLCD.h"
+#include <ArduinoJSON.h>
 
 #define lcd_RST_pin 22 // LCD HX1230 pins, (no pin6) Change to your desire pins
 #define lcd_CS_pin 21
 #define lcd_DIN_pin 18
 #define lcd_CLK_pin 5
-#define MQTT_HOST ""
+#define MQTT_HOST "iot-connect.in"
 #define MQTT_PORT 1883
 //MQTT Cred
-#define MQTT_UNAME ""
-#define MQTT_PASS ""
+#define MQTT_UNAME "iotconnect"
+#define MQTT_PASS "iot-12345"
 
 #define leftButton 33
 #define rightButton 26
@@ -167,16 +168,42 @@ void rightButtonPressed()
 
 void printOnLCD(String str)
 {
-  lcd.line(1);
-  // Length (with one extra character for the null terminator)
-  int str_len = str.length() + 1; 
-  
-  // Prepare the character array (the buffer) 
-  char char_array[str_len];
-  
-  // Copy it over 
-  str.toCharArray(char_array, str_len);
-  lcd.print(char_array);
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, str);
+  if(error)
+  {
+    lcd.line(1);
+    int str_len = str.length() + 1;     
+    char char_array[str_len];    
+    str.toCharArray(char_array, str_len);    
+    lcd.print(char_array);    
+  }
+  else
+  {
+    JsonObject obj = doc.as<JsonObject>();
+    int line = obj[String("L")];
+    for(int i=0; i<=10; i++)
+    {
+      if(i <= line)
+      {
+        String l = obj[String(i)];
+        int str_len = l.length() + 1;     
+        char char_array[17] = "                ";   
+        lcd.line(i);
+        lcd.print(char_array); 
+        l.toCharArray(char_array, str_len);    
+        lcd.line(i);
+        lcd.print(char_array);
+      }
+      else
+      {
+        char char_array[17] = "                ";   
+        lcd.line(i);
+        lcd.print(char_array);
+      }
+      
+    }  
+  }
 }
 
 
