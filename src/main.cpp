@@ -15,6 +15,7 @@ extern "C" {
 
 #include <Ticker.h>
 #include <Nokia_LCD.h>
+#include <ArduinoJSON.h>
 #define MQTT_HOST "192.168.1.52"
 #define MQTT_PORT 1883
 //MQTT Cred
@@ -160,10 +161,28 @@ void rightButtonPressed()
    }   
 }
 
-void printOnLCD(String option)
+void printOnLCD(String str)
 {
   lcd.clear(); 
-  lcd.print(option.c_str()); 
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, str);
+  if(error)
+  {
+    lcd.print(str.c_str());    
+  }
+  else
+  {
+    String data = "";
+    JsonObject obj = doc.as<JsonObject>();
+    int line = obj[String("L")];
+    for(int i=0; i<=10; i++)
+    {
+      String l = obj[String(i)];
+      data = data + l;
+      data = data + "\n";
+    }
+    lcd.print(data.c_str());    
+  }
 }
 
 
