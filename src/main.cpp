@@ -32,7 +32,10 @@ extern "C" {
 #define led 25
 #define backled 4
 #define touch 13
-
+#define freq 8000
+#define ledChannel 0
+#define resolution 8
+ 
 #define MQTTATT "tableClock-att"
 #define MQTTIN "tableClock-input"
 #define MQTTOUT "tableClock-output"
@@ -210,7 +213,7 @@ void printOnLCD(String str)
 
 void turnOffBackled()
 {
-  digitalWrite(backled, LOW);
+  ledcWrite(ledChannel, 50);
 }
 void savedAndConnected()
 {
@@ -238,7 +241,7 @@ void connectToMqtt() {
 
 void backledAlert()
 {
-  digitalWrite(backled, HIGH);
+  ledcWrite(ledChannel, 255);
   bkledTicker.once(5, turnOffBackled);
 }
 
@@ -311,11 +314,14 @@ void setup() {
 // init serial for debug:
    Serial.begin(115200);
    Serial.println("Starting...");
+//bkled Setup:
+   ledcSetup(ledChannel, freq, resolution);
+   ledcAttachPin(backled, ledChannel);
+   ledcWrite(ledChannel, 50);
 // init pins
    pinMode(led, OUTPUT);
    pinMode(leftButton, INPUT);
    pinMode(rightButton, INPUT);
-   pinMode(backled, OUTPUT);
    tickerTouch.attach_ms(10, touched);
    tickerLeftButtonPressed.attach_ms(10, leftButtonPressed);
    tickerRightButtonPressed.attach_ms(10, rightButtonPressed);
