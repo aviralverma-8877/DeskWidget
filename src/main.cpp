@@ -53,7 +53,7 @@ Ticker tickerAttendence;
 Ticker dutyCycle;
 
 TimerHandle_t mqttReconnectTimer;
-int cycle = 50;
+int cycle = 0;
 byte lastPressed = 0;
 bool ledStatus = HIGH;
 bool notification = false;
@@ -241,7 +241,7 @@ void cycleUp()
 }
 void cycleDown()
 {
-  if(cycle > 50)
+  if(cycle > 0)
   {
     cycle--;
     ledcWrite(ledChannel, cycle);
@@ -279,7 +279,7 @@ void connectToMqtt() {
 void backledAlert()
 {
   cycleUp();
-  bkledTicker.once(10, turnOffBackled);
+  bkledTicker.once(5, turnOffBackled);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -340,7 +340,7 @@ void setup() {
 //bkled Setup:
    ledcSetup(ledChannel, freq, resolution);
    ledcAttachPin(backled, ledChannel);
-   ledcWrite(ledChannel, 50);
+   ledcWrite(ledChannel, cycle);
 // init pins
    pinMode(led, OUTPUT);
    pinMode(leftButton, INPUT);
